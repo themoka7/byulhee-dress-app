@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>별희의 드레스</title>
 <!-- 폰 크롬에서 "홈 화면에 추가" 하면 앱처럼 전체 화면으로 열림 (설치 없이) -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -22,25 +22,31 @@
     }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; }
+  /* 화면 전체는 고정 — 옷·아이템 목록(.grid)만 위아래로 드래그 */
+  html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
   body {
     background: var(--bg); color: var(--ink);
     font-family: "Jua", system-ui, sans-serif;
     display: flex; flex-direction: column; align-items: center;
-    padding: 16px; min-height: 100%;
+    height: 100dvh;
+    padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+    touch-action: none;            /* 화면 끌기·확대 막기 */
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   }
-  h1 { margin: 4px 0 12px; font-weight: 400; font-size: clamp(26px, 4vw, 38px); letter-spacing: 1px; }
+  button { touch-action: manipulation; }
+  h1 { margin: 0 0 10px; flex: none; font-weight: 400; font-size: clamp(26px, 4vw, 38px); letter-spacing: 1px; }
   h1 span { color: var(--pink); }
 
   .game {
-    width: 100%; max-width: 1100px; display: grid; gap: 20px;
-    grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.1fr); align-items: start;
+    width: 100%; max-width: 1100px; flex: 1; min-height: 0; display: grid; gap: 20px;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 1.1fr); align-items: stretch;
   }
-  @media (max-width: 760px) { .game { grid-template-columns: 1fr; } }
+  @media (max-height: 640px) { h1 { display: none; } }
 
   /* 거울 */
   .mirror {
-    position: relative; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 4 / 5;
+    position: relative; height: 100%; max-height: 100%; max-width: 100%; margin: 0 auto; aspect-ratio: 4 / 5;
+    align-self: center;
     border-radius: 50% 50% 22px 22px / 32% 32% 22px 22px;
     padding: 14px; background: linear-gradient(145deg, #FFE39A, var(--gold) 40%, #D9902A 70%, #FFE39A);
     box-shadow: 0 10px 30px rgba(58, 40, 88, .25);
@@ -62,14 +68,23 @@
   @media (prefers-reduced-motion: reduce) { .sparkle { display: none; } .glass { transition: none; } }
 
   /* 옷장 */
-  .closet { background: var(--card); border-radius: 22px; padding: 14px; box-shadow: 0 6px 20px rgba(58, 40, 88, .12); }
-  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .closet {
+    background: var(--card); border-radius: 22px; padding: 14px; box-shadow: 0 6px 20px rgba(58, 40, 88, .12);
+    min-height: 0; min-width: 0; display: flex; flex-direction: column;
+  }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; flex: none; }
   .tab {
     font: inherit; font-size: 18px; color: var(--ink); background: var(--soft);
     border: 2px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; min-height: 44px;
   }
   .tab[aria-selected="true"] { background: var(--pink); border-color: var(--pink); color: #fff; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; align-content: start;
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    touch-action: pan-y;           /* 여기만 위아래로 드래그 */
+    padding: 2px; margin: -2px;
+  }
+  .item img { -webkit-user-drag: none; pointer-events: none; }
   .item {
     font: inherit; color: var(--ink); background: var(--soft); border: 3px solid transparent; border-radius: 16px;
     padding: 6px 6px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -82,7 +97,7 @@
   .item .none { display: grid; place-items: center; font-size: 34px; color: #C9B9E6; }
   .item span { font-size: 15px; line-height: 1.2; text-align: center; }
 
-  .palette { display: flex; gap: 8px; align-items: center; margin: 0 0 12px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+  .palette { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; padding: 2px; flex: none; }
   .palette[hidden] { display: none; }
   .palette .lbl { font-size: 16px; white-space: nowrap; color: var(--muted); }
   .chip {
@@ -91,7 +106,7 @@
   }
   .chip.orig { background: conic-gradient(#ff7a9f, #ffd36b, #8be08b, #7ec8ff, #b99bff, #ff7a9f); }
   .chip[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--pink); transform: scale(1.12); }
-  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex: none; }
   .btn {
     flex: 1; min-width: 120px; font: inherit; font-size: 19px; border: 0; border-radius: 16px; padding: 12px; cursor: pointer;
     color: #fff; background: var(--pink); box-shadow: 0 4px 0 #D94C7C;
@@ -99,16 +114,19 @@
   .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #D94C7C; }
   .btn.gold { background: var(--gold); box-shadow: 0 4px 0 #C88A1E; color: #3A2858; }
   .btn.plain { background: var(--soft); color: var(--ink); box-shadow: 0 4px 0 var(--line); }
-  /* 폰 세로: 거울은 위 절반, 옷장은 아래에서 스크롤 */
+  /* 폰 세로: 거울은 위, 옷장은 아래 — 탭·색깔은 줄바꿈으로 다 보이게, 목록만 드래그 */
   @media (max-width: 760px) {
-    body { height: 100dvh; padding: 10px 12px; overflow: hidden; }
+    body { padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom)); }
     h1 { display: none; }
-    .game { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
-    .mirror { height: 46dvh; width: auto; max-width: 100%; padding: 10px; flex: none; }
-    .closet { flex: 1; min-height: 0; min-width: 0; width: 100%; display: flex; flex-direction: column; padding: 10px; }
-    .tabs { gap: 6px; margin-bottom: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-    .tab { font-size: 16px; padding: 6px 12px; white-space: nowrap; min-height: 40px; }
-    .grid { flex: 1; overflow-y: auto; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; align-content: start; }
+    .game { display: flex; flex-direction: column; gap: 8px; }
+    .mirror { height: 40dvh; width: auto; padding: 8px; flex: none; }
+    .closet { flex: 1; width: 100%; padding: 8px; }
+    .tabs { gap: 5px; margin-bottom: 6px; }
+    .tab { font-size: 14px; padding: 4px 9px; white-space: nowrap; min-height: 34px; }
+    .palette { gap: 5px; margin-bottom: 6px; }
+    .palette .lbl { font-size: 13px; }
+    .chip { width: 28px; height: 28px; border-width: 2px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
     .item span { font-size: 13px; }
     .actions { margin-top: 8px; gap: 8px; flex-wrap: nowrap; }
     .btn { min-width: 0; font-size: 15px; padding: 10px 4px; white-space: nowrap; }

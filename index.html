@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>별희의 드레스</title>
+<!-- 폰 크롬에서 "홈 화면에 추가" 하면 앱처럼 전체 화면으로 열림 (설치 없이) -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#FF6F9F">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EEE8FF; --ink: #3A2858; --pink: #FF6F9F; --gold: #F4B63F;
+    --card: #FFFFFF; --soft: #F7F3FF; --line: #DCD0F5; --muted: #7C6A9E;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1E1630; --ink: #F3ECFF; --card: #2B2142; --soft: #33284D; --line: #4A3D68; --muted: #B9A9D9;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Jua", system-ui, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 16px; min-height: 100%;
+  }
+  h1 { margin: 4px 0 12px; font-weight: 400; font-size: clamp(26px, 4vw, 38px); letter-spacing: 1px; }
+  h1 span { color: var(--pink); }
+
+  .game {
+    width: 100%; max-width: 1100px; display: grid; gap: 20px;
+    grid-template-columns: minmax(280px, 1fr) minmax(300px, 1.1fr); align-items: start;
+  }
+  @media (max-width: 760px) { .game { grid-template-columns: 1fr; } }
+
+  /* 거울 */
+  .mirror {
+    position: relative; width: 100%; max-width: 520px; margin: 0 auto; aspect-ratio: 4 / 5;
+    border-radius: 50% 50% 22px 22px / 32% 32% 22px 22px;
+    padding: 14px; background: linear-gradient(145deg, #FFE39A, var(--gold) 40%, #D9902A 70%, #FFE39A);
+    box-shadow: 0 10px 30px rgba(58, 40, 88, .25);
+  }
+  .glass {
+    position: relative; width: 100%; height: 100%; overflow: hidden;
+    border-radius: inherit; transition: background .4s;
+  }
+  .stage { position: absolute; left: 50%; top: 50%; width: 118%; aspect-ratio: 1; transform: translate(-50%, -50%); }
+  .stage img { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; user-select: none; }
+  .stage img[hidden] { display: none; }
+
+  .sparkle { position: absolute; pointer-events: none; font-size: 26px; animation: pop .9s ease-out forwards; }
+  @keyframes pop {
+    0% { transform: scale(.2) rotate(0); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: scale(1.3) rotate(160deg) translateY(-30px); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sparkle { display: none; } .glass { transition: none; } }
+
+  /* 옷장 */
+  .closet { background: var(--card); border-radius: 22px; padding: 14px; box-shadow: 0 6px 20px rgba(58, 40, 88, .12); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .tab {
+    font: inherit; font-size: 18px; color: var(--ink); background: var(--soft);
+    border: 2px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; min-height: 44px;
+  }
+  .tab[aria-selected="true"] { background: var(--pink); border-color: var(--pink); color: #fff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+  .item {
+    font: inherit; color: var(--ink); background: var(--soft); border: 3px solid transparent; border-radius: 16px;
+    padding: 6px 6px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: transform .12s;
+  }
+  .item:active { transform: scale(.95); }
+  .item[aria-pressed="true"] { border-color: var(--pink); background: #FFE3EE; color: #3A2858; }
+  .item img, .item .swatch, .item .none { width: 100%; aspect-ratio: 1; border-radius: 12px; object-fit: contain; background: #fff; }
+  .item img.scene { object-fit: cover; }
+  .item .none { display: grid; place-items: center; font-size: 34px; color: #C9B9E6; }
+  .item span { font-size: 15px; line-height: 1.2; text-align: center; }
+
+  .palette { display: flex; gap: 8px; align-items: center; margin: 0 0 12px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+  .palette[hidden] { display: none; }
+  .palette .lbl { font-size: 16px; white-space: nowrap; color: var(--muted); }
+  .chip {
+    flex: none; width: 38px; height: 38px; border-radius: 50%; border: 3px solid #fff; cursor: pointer;
+    box-shadow: 0 0 0 2px var(--line); padding: 0; font: inherit; font-size: 15px; color: #3A2858;
+  }
+  .chip.orig { background: conic-gradient(#ff7a9f, #ffd36b, #8be08b, #7ec8ff, #b99bff, #ff7a9f); }
+  .chip[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--pink); transform: scale(1.12); }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .btn {
+    flex: 1; min-width: 120px; font: inherit; font-size: 19px; border: 0; border-radius: 16px; padding: 12px; cursor: pointer;
+    color: #fff; background: var(--pink); box-shadow: 0 4px 0 #D94C7C;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #D94C7C; }
+  .btn.gold { background: var(--gold); box-shadow: 0 4px 0 #C88A1E; color: #3A2858; }
+  .btn.plain { background: var(--soft); color: var(--ink); box-shadow: 0 4px 0 var(--line); }
+  /* 폰 세로: 거울은 위 절반, 옷장은 아래에서 스크롤 */
+  @media (max-width: 760px) {
+    body { height: 100dvh; padding: 10px 12px; overflow: hidden; }
+    h1 { display: none; }
+    .game { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+    .mirror { height: 46dvh; width: auto; max-width: 100%; padding: 10px; flex: none; }
+    .closet { flex: 1; min-height: 0; min-width: 0; width: 100%; display: flex; flex-direction: column; padding: 10px; }
+    .tabs { gap: 6px; margin-bottom: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .tab { font-size: 16px; padding: 6px 12px; white-space: nowrap; min-height: 40px; }
+    .grid { flex: 1; overflow-y: auto; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; align-content: start; }
+    .item span { font-size: 13px; }
+    .actions { margin-top: 8px; gap: 8px; flex-wrap: nowrap; }
+    .btn { min-width: 0; font-size: 15px; padding: 10px 4px; white-space: nowrap; }
+  }
+  .err { max-width: 560px; background: var(--card); padding: 16px; border-radius: 16px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<h1>✨ 별희의 <span>드레스</span> ✨</h1>
+
+<div class="game" id="game">
+  <div class="mirror"><div class="glass" id="glass"><div class="stage" id="stage"></div></div></div>
+  <div class="closet">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="palette" id="palette" hidden></div>
+    <div class="grid" id="grid"></div>
+    <div class="actions">
+      <button class="btn" id="random">🎲 랜덤 코디</button>
+      <button class="btn gold" id="save">📷 사진 저장</button>
+      <button class="btn plain" id="reset">🔄 처음으로</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/manifest.js"></script>
+<script>
+(() => {
+  const M = window.MANIFEST;
+  if (!M) {
+    document.getElementById('game').innerHTML =
+      '<p class="err">에셋이 없어요. 먼저 <b>python tools/build_assets.py</b> 를 실행해 주세요.</p>';
+    return;
+  }
+
+  // 그림 배경(raw/bg_N.png) 먼저, 그다음 단색 그라데이션
+  const BACKGROUNDS = [
+    ...(M.backgrounds || []),
+    { id: 'pink',   name: '분홍 방',   stops: ['#FFE6F0', '#FFC4DA'] },
+    { id: 'sky',    name: '하늘',     stops: ['#DDF0FF', '#B9DCFF'] },
+    { id: 'garden', name: '정원',     stops: ['#F2FFE2', '#C6EDB0'] },
+    { id: 'castle', name: '성',       stops: ['#F3E8FF', '#D3BDF7'] },
+    { id: 'night',  name: '별밤',     stops: ['#3B3478', '#1D1A45'] },
+    { id: 'sunset', name: '노을',     stops: ['#FFEFC9', '#FFB8A8'] },
+  ];
+
+  // ★ 숨기고 싶은 탭: 예) ['acc'] 이면 악세서리 탭이 안 보임
+  //   hair 머리 / face 표정 / set 드레스 / top 상의 / bottom 하의 / shoes 신발 / acc 악세서리 / bg 배경
+  const HIDDEN_TABS = [];
+
+  // 탭: key = 상태 이름, list = 아이템 목록, none = '없음' 칸 허용
+  const TABS = [
+    { key: 'hair',   label: '💇 머리',   list: M.hairs,   none: true },
+    { key: 'face',   label: '😊 표정',   list: M.faces,   none: false },
+    { key: 'set',    label: '👗 드레스', list: M.sets,    none: true },
+    { key: 'top',    label: '👚 상의',   list: M.tops,    none: true },
+    { key: 'bottom', label: '🩰 하의',   list: M.bottoms, none: true },
+    { key: 'shoes',  label: '👠 신발',   list: M.shoes,   none: true },
+    { key: 'acc',    label: '👑 악세서리', list: M.accessories || [], none: true },
+    { key: 'bg',     label: '🏰 배경',   list: BACKGROUNDS, none: false },
+  ].filter(t => t.list && t.list.length && !HIDDEN_TABS.includes(t.key));
+
+  // 색 바꾸기: 목표 색상(도). null = 원래 색
+  const COLORS = [
+    { hue: 0, css: '#FF5A6E' }, { hue: 25, css: '#FF9A4D' }, { hue: 50, css: '#FFD84D' },
+    { hue: 130, css: '#6CD58A' }, { hue: 185, css: '#5FD3D8' }, { hue: 215, css: '#5C9DFF' },
+    { hue: 270, css: '#A77BFF' }, { hue: 320, css: '#FF7FCB' },
+  ];
+  const COLORABLE = { hair: M.hairs, set: M.sets, top: M.tops, bottom: M.bottoms, shoes: M.shoes };
+  const ACCS = M.accessories || [];
+  const SLOT_KEYS = Object.keys(M.slots || {});            // head / r / l
+
+  const DEFAULT = { hair: null, face: M.faces[0] && M.faces[0].id, set: null, top: null, bottom: null, shoes: null, acc: {}, bg: (M.backgrounds && M.backgrounds[0] && M.backgrounds[0].id) || 'pink', colors: {} };
+  const STORE = 'princess-dressup-v1';
+  let state = { ...DEFAULT };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (saved) state = { ...DEFAULT, ...saved, colors: { ...(saved.colors || {}) }, acc: { ...(saved.acc || {}) } };
+  } catch (e) { /* 저장소 없음 */ }
+  const persist = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} };
+
+  const find = (list, id) => list.find(x => x.id === id);
+
+  // 아이템 색을 목표 색상으로: 색 있는 옷은 색상 회전, 흰색·검정 옷은 물들이기
+  function tint(item, hue) {
+    if (!item || hue == null) return '';
+    if (item.hue != null) return `hue-rotate(${Math.round(hue - item.hue)}deg)`;
+    return `sepia(1) saturate(3) hue-rotate(${Math.round(hue - 50)}deg)`;
+  }
+  const sel = (s, key) => find(COLORABLE[key], s[key]);
+  // 옷 레이어 + (색을 바꿨을 때) 피부·속옷을 원래 색으로 덮는 fix 레이어
+  const cloth = (key, part = 'src') => [
+    [key + ':' + part, s => { const x = sel(s, key); return x && { src: x[part], filter: tint(x, s.colors[key]) }; }],
+    [key + ':' + part + ':fix', s => { const x = sel(s, key); return x && x.fix && tint(x, s.colors[key]) && { src: x.fix }; }],
+  ];
+
+  // 렌더링 순서 (아래 → 위). pick(state) → { src, filter } 또는 없음
+  const LAYERS = [
+    ['hairBack', s => { const h = sel(s, 'hair'); return h && { src: h.back, filter: tint(h, s.colors.hair) }; }],
+    ['body',     () => ({ src: M.body })],
+    ['face',     s => { const f = find(M.faces, s.face); return f && f.src && { src: f.src }; }],
+    ...cloth('shoes'), ...cloth('bottom'), ...cloth('top'), ...cloth('set'), ...cloth('hair', 'front'),
+    // 악세서리: 자리마다 아이템 + (손에 드는 것이면) 손을 다시 그려 쥔 모습으로
+    ...SLOT_KEYS.flatMap(slot => [
+      ['acc:' + slot, s => {
+        const x = find(ACCS, s.acc[slot]);
+        if (!x) return null;
+        let dy = 0;   // 왕관은 머리 높이에 맞춰 내려앉힘
+        const h = slot === 'head' && sel(s, 'hair');
+        if (h && h.top != null) dy = h.top - M.headTop;
+        return { src: x.src, filter: tint(x, s.colors['acc:' + slot]), dy };
+      }],
+      ['hand:' + slot, s => {
+        const hand = M.slots[slot].hand;
+        return hand && find(ACCS, s.acc[slot]) && { src: M.hands[hand] };
+      }],
+    ]),
+  ];
+
+  const stage = document.getElementById('stage');
+  const glass = document.getElementById('glass');
+  const imgs = {};
+  for (const [name] of LAYERS) {
+    const im = document.createElement('img');
+    im.alt = ''; im.draggable = false;
+    stage.appendChild(im); imgs[name] = im;
+  }
+
+  function renderCharacter() {
+    for (const [name, pick] of LAYERS) {
+      const L = pick(state);
+      const im = imgs[name];
+      if (L && L.src) {
+        if (im.getAttribute('src') !== L.src) im.src = L.src;
+        im.style.filter = L.filter || '';
+        im.style.transform = L.dy ? `translateY(${(L.dy / M.size) * 100}%)` : '';
+        im.hidden = false;
+      } else im.hidden = true;
+    }
+    const bg = find(BACKGROUNDS, state.bg) || BACKGROUNDS[0];
+    glass.style.background = bg.src
+      ? `center bottom / cover no-repeat url("${bg.src}")`
+      : `linear-gradient(180deg, ${bg.stops[0]}, ${bg.stops[1]})`;
+  }
+
+  // 탭 + 썸네일
+  const tabsEl = document.getElementById('tabs');
+  const gridEl = document.getElementById('grid');
+  let current = TABS[0].key;
+  try { const t = localStorage.getItem(STORE + ':tab'); if (TABS.some(x => x.key === t)) current = t; } catch (e) {}
+
+  function renderTabs() {
+    tabsEl.innerHTML = '';
+    for (const t of TABS) {
+      const b = document.createElement('button');
+      b.className = 'tab'; b.role = 'tab'; b.textContent = t.label;
+      b.setAttribute('aria-selected', t.key === current);
+      b.onclick = () => { current = t.key; try { localStorage.setItem(STORE + ':tab', current); } catch (e) {} renderTabs(); renderGrid(); };
+      tabsEl.appendChild(b);
+    }
+  }
+
+  const paletteEl = document.getElementById('palette');
+  let accSlot = null;   // 악세서리 탭에서 색을 바꿀 자리 (마지막으로 고른 것)
+  function renderPalette() {
+    let key = current, item = COLORABLE[key] && sel(state, key);
+    if (current === 'acc') {
+      if (!accSlot || !state.acc[accSlot]) accSlot = SLOT_KEYS.find(k => state.acc[k]) || null;
+      item = accSlot && find(ACCS, state.acc[accSlot]);
+      key = 'acc:' + accSlot;
+    }
+    paletteEl.hidden = !item;
+    if (!item) return;
+    paletteEl.innerHTML = '<span class="lbl">🎨 색깔</span>';
+    const cur = state.colors[key] ?? null;
+    const add = (hue, css) => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (hue == null ? ' orig' : '');
+      if (css) b.style.background = css;
+      b.setAttribute('aria-label', hue == null ? '원래 색' : '색 ' + hue);
+      b.setAttribute('aria-pressed', cur === hue);
+      b.onclick = () => { state.colors[key] = hue; persist(); renderCharacter(); renderPalette(); sparkle(4); };
+      paletteEl.appendChild(b);
+    };
+    add(null);
+    for (const c of COLORS) add(c.hue, c.css);
+  }
+
+  function renderGrid() {
+    renderPalette();
+    const tab = TABS.find(t => t.key === current);
+    gridEl.innerHTML = '';
+    const entries = (tab.none ? [{ id: null, name: '없음' }] : []).concat(tab.list);
+    for (const it of entries) {
+      const b = document.createElement('button');
+      b.className = 'item';
+      const on = tab.key === 'acc'
+        ? (it.id === null ? !Object.values(state.acc).some(Boolean) : state.acc[it.slot] === it.id)
+        : state[tab.key] === it.id;
+      b.setAttribute('aria-pressed', on);
+      let pic;
+      if (it.id === null) { pic = document.createElement('div'); pic.className = 'none'; pic.textContent = '✕'; }
+      else if (it.stops) { pic = document.createElement('div'); pic.className = 'swatch'; pic.style.background = `linear-gradient(180deg, ${it.stops[0]}, ${it.stops[1]})`; }
+      else { pic = document.createElement('img'); pic.src = it.thumb; pic.alt = ''; pic.loading = 'lazy'; if (tab.key === 'bg') pic.className = 'scene'; }
+      const label = document.createElement('span'); label.textContent = it.name;
+      b.append(pic, label);
+      b.onclick = () => tab.key === 'acc' ? chooseAcc(it) : choose(tab.key, it.id);
+      gridEl.appendChild(b);
+    }
+  }
+
+  // 악세서리: 같은 자리(머리/오른손/왼손)는 하나만. 다시 누르면 벗기, '없음'은 전부 벗기
+  function chooseAcc(it) {
+    if (it.id === null) { state.acc = {}; accSlot = null; }
+    else if (state.acc[it.slot] === it.id) { state.acc[it.slot] = null; }
+    else { state.acc[it.slot] = it.id; state.colors['acc:' + it.slot] = null; accSlot = it.slot; }
+    persist(); renderCharacter(); renderGrid(); sparkle();
+  }
+
+  function choose(key, id) {
+    if (state[key] !== id) state.colors[key] = null;   // 새 옷은 원래 색으로
+    state[key] = id;
+    // 드레스(한 벌)와 상의·하의는 함께 입을 수 없음
+    if (key === 'set' && id) { state.top = null; state.bottom = null; }
+    if ((key === 'top' || key === 'bottom') && id) state.set = null;
+    persist(); renderCharacter(); renderGrid(); sparkle();
+  }
+
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  function sparkle(n = 6) {
+    if (reduced.matches) return;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      s.textContent = ['✨', '⭐', '💖', '🌸'][i % 4];
+      s.style.left = (15 + Math.random() * 70) + '%';
+      s.style.top = (15 + Math.random() * 70) + '%';
+      s.style.animationDelay = (i * 60) + 'ms';
+      glass.appendChild(s);
+      setTimeout(() => s.remove(), 1200 + i * 60);
+    }
+  }
+
+  const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+  document.getElementById('random').onclick = () => {
+    const pickOrNone = (list, p = 0.8) => (list.length && Math.random() < p) ? rand(list).id : null;
+    state.hair = pickOrNone(M.hairs, 0.9);
+    state.face = rand(M.faces).id;
+    if (M.sets.length && Math.random() < 0.5) {
+      state.set = rand(M.sets).id; state.top = null; state.bottom = null;
+    } else {
+      state.set = null; state.top = pickOrNone(M.tops); state.bottom = pickOrNone(M.bottoms);
+    }
+    state.shoes = pickOrNone(M.shoes, 0.7);
+    state.acc = {};
+    for (const slot of SLOT_KEYS) {
+      const list = ACCS.filter(a => a.slot === slot);
+      if (list.length && Math.random() < 0.4) state.acc[slot] = rand(list).id;
+    }
+    state.bg = rand(BACKGROUNDS).id;
+    state.colors = {};
+    for (const k of Object.keys(COLORABLE)) if (Math.random() < 0.3) state.colors[k] = rand(COLORS).hue;
+    persist(); renderCharacter(); renderGrid(); sparkle(10);
+  };
+  document.getElementById('reset').onclick = () => {
+    state = { ...DEFAULT, colors: {}, acc: {} }; persist(); renderCharacter(); renderGrid();
+  };
+
+  // 사진 저장: 배경 + 레이어를 canvas에 합성
+  document.getElementById('save').onclick = async () => {
+    const W = 1024, H = 1280;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    const bg = find(BACKGROUNDS, state.bg) || BACKGROUNDS[0];
+    if (bg.src) {
+      const bi = new Image(); bi.src = bg.src;
+      try { await bi.decode(); g.drawImage(bi, 0, 0, W, H); } catch (e) {}
+    } else {
+      const grad = g.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, bg.stops[0]); grad.addColorStop(1, bg.stops[1]);
+      g.fillStyle = grad; g.fillRect(0, 0, W, H);
+    }
+    const size = H * 0.98, x = (W - size) / 2, y = (H - size) / 2 + 20;
+    for (const [name, pick] of LAYERS) {
+      const L = pick(state);
+      if (!L || !L.src) continue;
+      const im = new Image(); im.src = L.src;
+      try { await im.decode(); } catch (e) { continue; }
+      g.filter = L.filter || 'none';
+      g.drawImage(im, x, y + (L.dy || 0) / M.size * size, size, size);
+    }
+    g.filter = 'none';
+    let url;
+    try { url = c.toDataURL('image/png'); }
+    catch (e) { alert('파일로 열면 사진 저장이 막혀요. 간단한 웹서버로 열어 주세요.'); return; }
+    sparkle(10);
+    if (window.Android && window.Android.savePng) { window.Android.savePng(url); return; }  // 갤럭시 앱
+    const a = document.createElement('a');
+    a.download = '공주_코디.png'; a.href = url; a.click();
+  };
+
+  renderTabs(); renderGrid(); renderCharacter();
+})();
+</script>
+</body>
+</html>
